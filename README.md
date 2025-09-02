@@ -7,6 +7,10 @@ This integration extends the official [Synology DSM integration](https://www.hom
 
 All entities are grouped under the same device as your existing Synology DSM integration, keeping everything organized.
 
+## Security Notice
+
+**Important:** This integration reuses the credentials from your existing Synology DSM integration to authenticate with your NAS against the DSM API. It only accesses the specific NAS device that you configure with this integration. If you are not comfortable with this credential sharing approach, please do not use this integration.
+
 ## Prerequisites
 
 - A Synology NAS device properly configured and accessible
