@@ -173,9 +173,7 @@ async def async_setup_entry(
     async_add_entities(_create_entities(coordinator.data))
 
     # Track existing entity IDs to avoid duplicates
-    existing_ids = {
-        entity.unique_id for entity in _create_entities(coordinator.data)
-    }
+    existing_ids = {entity.unique_id for entity in _create_entities(coordinator.data)}
 
     @callback
     def _async_update_entities() -> None:
