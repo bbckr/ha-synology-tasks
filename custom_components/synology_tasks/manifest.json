@@ -1,13 +1,13 @@
 {
-    "domain": "synology_tasks",
-    "name": "Synology Tasks",
-    "documentation": "https://github.com/bbckr/hacs-synology-tasks",
-    "issue_tracker": "https://github.com/bbckr/hacs-synology-tasks/issues",
-    "dependencies": ["synology_dsm"],
-    "integration_type": "hub",
     "codeowners": ["@bbckr"],
-    "requirements": ["requests"],
-    "version": "0.1.0",
     "config_flow": true,
-    "iot_class": "local_polling"
+    "dependencies": ["synology_dsm"],
+    "documentation": "https://github.com/bbckr/hacs-synology-tasks",
+    "domain": "synology_tasks",
+    "integration_type": "hub",
+    "iot_class": "local_polling",
+    "issue_tracker": "https://github.com/bbckr/hacs-synology-tasks/issues",
+    "name": "Synology Tasks",
+    "requirements": ["requests"],
+    "version": "0.1.0"
 }
