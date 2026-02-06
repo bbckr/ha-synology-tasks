@@ -181,9 +181,7 @@ class SynologyDSM:
                 self._synotoken = None
                 self._sync_login()
                 params[API_SYNO_TOKEN] = self._synotoken
-                r = self._session.get(
-                    self._url, params=params, verify=self._verify_ssl
-                )
+                r = self._session.get(self._url, params=params, verify=self._verify_ssl)
                 response = r.json()
                 if response.get(DATA_SUCCESS_KEY, False):
                     return response
