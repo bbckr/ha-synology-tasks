@@ -10,6 +10,7 @@ from homeassistant.exceptions import HomeAssistantError
 
 from .const import (
     API_ENABLE_SYNO_TOKEN,
+    API_ERROR_CODE_INVALID_SESSION,
     API_EVENT_SCHEDULER,
     API_LOGIN,
     API_METHOD_EVENT_SCHEDULER,
@@ -106,10 +107,24 @@ class SynologyDSM:
             SERVICE_DATA_TASK_NAME: task_name,
         }
 
+        _LOGGER.debug(
+            "Running task via DSM API: task_name=%s, api=%s, method=%s",
+            task_name,
+            API_EVENT_SCHEDULER,
+            API_METHOD_EVENT_SCHEDULER,
+        )
+
         try:
-            await self.hass.async_add_executor_job(self._sync_request, params)
+            response = await self.hass.async_add_executor_job(
+                self._sync_request, params
+            )
+            _LOGGER.debug(
+                "DSM run_task response for '%s': success=%s",
+                task_name,
+                response.get(DATA_SUCCESS_KEY),
+            )
         except Exception as err:
-            _LOGGER.exception("Error running task %s", task_name)
+            _LOGGER.exception("Error running task '%s'", task_name)
             raise SynologyTaskRunError from err
 
     def _sync_login(self) -> None:
@@ -149,10 +164,31 @@ class SynologyDSM:
             raise SynologyDSMAPIError from err
 
         if not response.get(DATA_SUCCESS_KEY, False):
-            _LOGGER.error("Error requesting: %s", r.text)
             error_code = response.get(DATA_ERROR_KEY, {}).get(
                 DATA_CODE_KEY, API_UNKNOWN
             )
+            # Session expired (e.g. after ~20 min): re-login and retry once
+            if (
+                not is_login
+                and error_code == API_ERROR_CODE_INVALID_SESSION
+                and self._sid
+            ):
+                _LOGGER.debug(
+                    "DSM session expired (error %s), re-logging in and retrying",
+                    error_code,
+                )
+                self._sid = None
+                self._synotoken = None
+                self._sync_login()
+                params[API_SYNO_TOKEN] = self._synotoken
+                r = self._session.get(self._url, params=params, verify=self._verify_ssl)
+                response = r.json()
+                if response.get(DATA_SUCCESS_KEY, False):
+                    return response
+                error_code = response.get(DATA_ERROR_KEY, {}).get(
+                    DATA_CODE_KEY, API_UNKNOWN
+                )
+            _LOGGER.error("Error requesting: %s", r.text)
             error_message = f"Received error code: {error_code}"
             raise SynologyDSMAPIError(error_message)
 

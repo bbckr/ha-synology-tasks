@@ -74,6 +74,8 @@ SERVICE_DATA_TASK_NAME = "task_name"
 # API Response Values
 API_YES = "yes"
 API_UNKNOWN = "Unknown"
+# DSM returns 119 when the session (SID) is invalid or expired
+API_ERROR_CODE_INVALID_SESSION: Final = 119
 
 # API Endpoint
 API_WEBAPI_ENDPOINT = "/webapi/entry.cgi"
@@ -92,3 +94,7 @@ TRANSLATION_KEY_TASK_RUN = "task_run"
 
 # Default values
 DEFAULT_SCAN_INTERVAL = 60  # seconds
+
+# Notifications
+NOTIFICATION_TITLE = "Synology Tasks"
+NOTIFICATION_ID_TASK_RUN = "synology_tasks_run_{task_id}"
