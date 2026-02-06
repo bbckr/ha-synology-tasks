@@ -6,6 +6,7 @@ import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from homeassistant.components import persistent_notification
 from homeassistant.components.button import ButtonEntity, ButtonEntityDescription
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant, callback
@@ -27,9 +28,12 @@ from .const import (
     CONFIG_DEVICE_SW_VERSION,
     DOMAIN,
     KEY_RUN,
+    NOTIFICATION_ID_TASK_RUN,
+    NOTIFICATION_TITLE,
     TRANSLATION_KEY_TASK_RUN,
 )
 from .coordinator import SynologyTasksCoordinator
+from .synology import SynologyTaskRunError
 
 if TYPE_CHECKING:
     from datetime import datetime
@@ -103,9 +107,54 @@ class SynologyTaskButton(CoordinatorEntity[SynologyTasksCoordinator], ButtonEnti
     async def async_press(self) -> None:
         """Handle the button press."""
         if not (task := self._get_task()):
+            _LOGGER.warning(
+                "Button press ignored: task not found in coordinator data (entity_id=%s, task_id=%s)",
+                self.entity_id,
+                self._task.id,
+            )
             return
-        await self.coordinator.api.run_task(task.name)
-        await self.coordinator.async_request_refresh()
+
+        task_name = task.name
+        task_id = task.id
+        notification_id = NOTIFICATION_ID_TASK_RUN.format(task_id=task_id)
+
+        _LOGGER.info(
+            "Button press received for task '%s' (task_id=%s, entity_id=%s)",
+            task_name,
+            task_id,
+            self.entity_id,
+        )
+
+        try:
+            await self.coordinator.api.run_task(task_name)
+            _LOGGER.info(
+                "Successfully triggered task '%s' (task_id=%s)",
+                task_name,
+                task_id,
+            )
+            persistent_notification.create(
+                self.hass,
+                f"Task **{task_name}** was triggered successfully.",
+                NOTIFICATION_TITLE,
+                notification_id=notification_id,
+            )
+            await self.coordinator.async_request_refresh()
+        except SynologyTaskRunError as err:
+            error_msg = str(err) or getattr(err.__cause__, "message", str(err.__cause__))
+            _LOGGER.error(
+                "Failed to run task '%s' (task_id=%s): %s",
+                task_name,
+                task_id,
+                error_msg,
+                exc_info=True,
+            )
+            persistent_notification.create(
+                self.hass,
+                f"Failed to run task **{task_name}**: {error_msg}",
+                NOTIFICATION_TITLE,
+                notification_id=notification_id,
+            )
+            raise
 
     @property
     def extra_state_attributes(self) -> dict[str, str | int | bool | datetime | None]:

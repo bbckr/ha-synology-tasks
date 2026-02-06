@@ -106,10 +106,28 @@ class SynologyDSM:
             SERVICE_DATA_TASK_NAME: task_name,
         }
 
+        _LOGGER.debug(
+            "Running task via DSM API: task_name=%s, api=%s, method=%s",
+            task_name,
+            API_EVENT_SCHEDULER,
+            API_METHOD_EVENT_SCHEDULER,
+        )
+
         try:
-            await self.hass.async_add_executor_job(self._sync_request, params)
+            response = await self.hass.async_add_executor_job(
+                self._sync_request, params
+            )
+            _LOGGER.debug(
+                "DSM run_task response for '%s': success=%s",
+                task_name,
+                response.get(DATA_SUCCESS_KEY),
+            )
         except Exception as err:
-            _LOGGER.exception("Error running task %s", task_name)
+            _LOGGER.exception(
+                "Error running task '%s': %s",
+                task_name,
+                err,
+            )
             raise SynologyTaskRunError from err
 
     def _sync_login(self) -> None:

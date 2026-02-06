@@ -92,3 +92,7 @@ TRANSLATION_KEY_TASK_RUN = "task_run"
 
 # Default values
 DEFAULT_SCAN_INTERVAL = 60  # seconds
+
+# Notifications
+NOTIFICATION_TITLE = "Synology Tasks"
+NOTIFICATION_ID_TASK_RUN = "synology_tasks_run_{task_id}"
