@@ -74,6 +74,8 @@ SERVICE_DATA_TASK_NAME = "task_name"
 # API Response Values
 API_YES = "yes"
 API_UNKNOWN = "Unknown"
+# DSM returns 119 when the session (SID) is invalid or expired
+API_ERROR_CODE_INVALID_SESSION: Final = 119
 
 # API Endpoint
 API_WEBAPI_ENDPOINT = "/webapi/entry.cgi"
