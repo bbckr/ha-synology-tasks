@@ -124,11 +124,7 @@ class SynologyDSM:
                 response.get(DATA_SUCCESS_KEY),
             )
         except Exception as err:
-            _LOGGER.exception(
-                "Error running task '%s': %s",
-                task_name,
-                err,
-            )
+            _LOGGER.exception("Error running task '%s'", task_name)
             raise SynologyTaskRunError from err
 
     def _sync_login(self) -> None:

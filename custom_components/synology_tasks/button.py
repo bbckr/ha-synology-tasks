@@ -108,7 +108,8 @@ class SynologyTaskButton(CoordinatorEntity[SynologyTasksCoordinator], ButtonEnti
         """Handle the button press."""
         if not (task := self._get_task()):
             _LOGGER.warning(
-                "Button press ignored: task not found in coordinator data (entity_id=%s, task_id=%s)",
+                "Button press ignored: task not found in coordinator data "
+                "(entity_id=%s, task_id=%s)",
                 self.entity_id,
                 self._task.id,
             )
@@ -140,13 +141,14 @@ class SynologyTaskButton(CoordinatorEntity[SynologyTasksCoordinator], ButtonEnti
             )
             await self.coordinator.async_request_refresh()
         except SynologyTaskRunError as err:
-            error_msg = str(err) or getattr(err.__cause__, "message", str(err.__cause__))
-            _LOGGER.error(
+            error_msg = str(err) or getattr(
+                err.__cause__, "message", str(err.__cause__)
+            )
+            _LOGGER.exception(
                 "Failed to run task '%s' (task_id=%s): %s",
                 task_name,
                 task_id,
                 error_msg,
-                exc_info=True,
             )
             persistent_notification.create(
                 self.hass,
