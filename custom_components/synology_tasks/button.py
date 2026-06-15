@@ -127,7 +127,7 @@ class SynologyTaskButton(CoordinatorEntity[SynologyTasksCoordinator], ButtonEnti
         )
 
         try:
-            await self.coordinator.api.run_task(task_name)
+            await self.coordinator.api.run_task(task_id, task.owner)
             _LOGGER.info(
                 "Successfully triggered task '%s' (task_id=%s)",
                 task_name,
