@@ -11,9 +11,7 @@ from homeassistant.exceptions import HomeAssistantError
 from .const import (
     API_ENABLE_SYNO_TOKEN,
     API_ERROR_CODE_INVALID_SESSION,
-    API_EVENT_SCHEDULER,
     API_LOGIN,
-    API_METHOD_EVENT_SCHEDULER,
     API_METHOD_LOGIN,
     API_METHOD_TASK_SCHEDULER,
     API_SORT_BY_NAME,
@@ -23,7 +21,6 @@ from .const import (
     API_TASK_OFFSET,
     API_TASK_SCHEDULER,
     API_UNKNOWN,
-    API_VERSION_EVENT_SCHEDULER,
     API_VERSION_LOGIN,
     API_VERSION_TASK_SCHEDULER,
     API_WEBAPI_ENDPOINT,
@@ -37,7 +34,6 @@ from .const import (
     DATA_TASKS_KEY,
     PROTOCOL_HTTP,
     PROTOCOL_HTTPS,
-    SERVICE_DATA_TASK_NAME,
 )
 from .models import (
     SynologyAuthData,
@@ -98,33 +94,40 @@ class SynologyDSM:
         tasks: list[SynologyTask] = tasks_data.get(DATA_TASKS_KEY, [])
         return [Task.from_api(task) for task in tasks]
 
-    async def run_task(self, task_name: str) -> None:
-        """Run a task by name."""
+    async def run_task(self, task_id: int, task_owner: str) -> None:
+        """Run a task by id and owner."""
         params = {
-            "api": API_EVENT_SCHEDULER,
-            "method": API_METHOD_EVENT_SCHEDULER,
-            "version": API_VERSION_EVENT_SCHEDULER,
-            SERVICE_DATA_TASK_NAME: task_name,
+            "api": "SYNO.Entry.Request",
+            "method": "request",
+            "version": 1,
+            "stop_when_error": "false",
+            "mode": '"sequential"',
+            "compound": (
+                '[{"api":"SYNO.Core.TaskScheduler",'
+                '"method":"run",'
+                '"version":2,'
+                f'"tasks":[{{"id":{task_id},"real_owner":"{task_owner}"}}]'
+                '}]'
+            ),
         }
 
-        _LOGGER.debug(
-            "Running task via DSM API: task_name=%s, api=%s, method=%s",
-            task_name,
-            API_EVENT_SCHEDULER,
-            API_METHOD_EVENT_SCHEDULER,
+        _LOGGER.warning(
+            "Running task via DSM compound API: task_id=%s, owner=%s",
+            task_id,
+            task_owner,
         )
 
         try:
             response = await self.hass.async_add_executor_job(
                 self._sync_request, params
             )
-            _LOGGER.debug(
-                "DSM run_task response for '%s': success=%s",
-                task_name,
-                response.get(DATA_SUCCESS_KEY),
+            _LOGGER.warning(
+                "DSM run_task FULL response for task_id '%s': %s",
+                task_id,
+                response,
             )
         except Exception as err:
-            _LOGGER.exception("Error running task '%s'", task_name)
+            _LOGGER.exception("Error running task_id '%s'", task_id)
             raise SynologyTaskRunError from err
 
     def _sync_login(self) -> None:
@@ -167,7 +170,6 @@ class SynologyDSM:
             error_code = response.get(DATA_ERROR_KEY, {}).get(
                 DATA_CODE_KEY, API_UNKNOWN
             )
-            # Session expired (e.g. after ~20 min): re-login and retry once
             if (
                 not is_login
                 and error_code == API_ERROR_CODE_INVALID_SESSION
